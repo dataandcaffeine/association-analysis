@@ -1,0 +1,134 @@
+---
+title: "Homework I"
+author: "Parker Lutz"
+date: "June 8, 2017"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+## II. b)
+
+####(a) Plot the observations.
+
+```{r a, comment=FALSE, warning=FALSE}
+clusterData <- cbind(c(1, 1, 0, 5, 6, 4), c(4, 3, 4, 1, 2, 0))
+plot(clusterData[,1], clusterData[,2])
+```
+
+####(b) Randomly assign a cluster label to each observation.
+####Report the clusterlabels for each observation.
+
+```{r b, comment=FALSE, warning=FALSE}
+set.seed(1)
+labels <- sample(2, nrow(clusterData), replace = T)
+labels
+```
+
+
+####(c) Compute the centroid for each cluster.
+
+```{r c, comment=FALSE, warning=FALSE}
+plot(clusterData[, 1], clusterData[, 2], col = (labels + 1), pch = 20, ceclusterData = 2)
+center_1 <- c(mean(clusterData[labels == 1, 1]), mean(clusterData[labels == 1, 2]))
+center_1
+center_2 <- c(mean(clusterData[labels == 2, 1]), mean(clusterData[labels == 2, 2]))
+center_2
+plot(clusterData[,1], clusterData[,2], col=(labels + 1), pch = 20, ceclusterData = 2)
+points(center_1[1], center_1[2], col = 2, pch = 4)
+points(center_2[1], center_2[2], col = 3, pch = 4)
+```
+
+####(d) Assign each observation to the centroid to which it is closest, in
+####terms of Euclidean distance. Report the cluster labels for each
+####observation.
+
+```{r d, comment=FALSE, warning=FALSE}
+labels <- c(1, 1, 1, 2, 2, 2)
+plot(clusterData[, 1], clusterData[, 2], col = (labels + 1), pch = 20, ceclusterData = 2)
+points(center_1[1], center_1[2], col = 2, pch = 4)
+points(center_2[1], center_2[2], col = 3, pch = 4)
+```
+
+####(e) Repeat (c) and (d) until the answers obtained stop changing.
+
+```{r e, comment=FALSE, warning=FALSE}
+center_1 <- c(mean(clusterData[labels == 1, 1]), mean(clusterData[labels == 1, 2]))
+center_2 <- c(mean(clusterData[labels == 2, 1]), mean(clusterData[labels == 2, 2]))
+plot(clusterData[,1], clusterData[,2], col=(labels + 1), pch = 20, ceclusterData = 2)
+points(center_1[1], center_1[2], col = 2, pch = 4)
+points(center_2[1], center_2[2], col = 3, pch = 4)
+```
+
+####(f) In your plot from (a), color the observations according to the
+####cluster labels obtained.
+
+```{r f, comment=FALSE, warning=FALSE}
+plot(clusterData[, 1], clusterData[, 2], col=(labels + 1), pch = 20, ceclusterData = 2)
+```
+
+###III
+####(a) Inspect the data. Explain the meaning of the item.
+
+```{r 3a, comment=FALSE, warning=FALSE}
+library(arules)
+data("AdultUCI") 
+dim(AdultUCI) 
+AdultUCI[1:2,]
+AdultUCI[["fnlwgt"]] <- NULL 
+AdultUCI[["education-num"]] <- NULL 
+AdultUCI[[ "age"]] <- ordered(cut(AdultUCI[[ "age"]], c(15,25,45,65,100)), labels = c("Young", "Middle-aged", "Senior", "Old"))  
+AdultUCI[[ "hours-per-week"]] <- ordered(cut(AdultUCI[[ "hours-per-week"]], c(0,25,40,60,168)), labels = c("Part-time", "Full-time", "Over-time", "Workaholic")) 
+AdultUCI[[ "capital-gain"]] <- ordered(cut(AdultUCI[[ "capital-gain"]], c(-Inf,0,median(AdultUCI[[ "capital-gain"]][AdultUCI[[ "capital-gain"]]>0]), Inf)), labels = c("None", "Low", "High"))  
+AdultUCI[[ "capital-loss"]] <- ordered(cut(AdultUCI[[ "capital-loss"]], c(-Inf,0, median(AdultUCI[[ "capital-loss"]][AdultUCI[[ "capital-loss"]]>0]), Inf)), labels = c("None", "Low", "High"))
+Adult <- as(AdultUCI, "transactions") 
+Adult
+```
+
+####(b) Plot the frequencies of items in the data set with support greater than 10%. 
+
+```{r 3b, comment=FALSE, warning=FALSE}
+itemFrequencyPlot(Adult, support = 0.1, cex.names = 0.8)
+```
+
+####(c) How many rules are there with a minimum support of 1% and a confidence of 60%? 
+
+```{r 3c, comment=FALSE, warning=FALSE}
+rules <- apriori(Adult, parameter = list(support = .01, confidence = 0.6, target ="rules"))
+```
+##### There are 276443 rules.
+
+
+####(d) Find all the rules related to the variable income. 
+####That is, find the factors that are associated with high income, and the factors associated with low income. 
+
+```{r 3d, comment=FALSE, warning=FALSE}
+rulesLowInc <- subset(rules, rhs %in% "income=small" )
+rulesHighInc <- subset(rules, rhs %in% "income=large")
+```
+
+####(e) If there are redundant rules, prune them.
+
+```{r 3e, comment=FALSE, warning=FALSE}
+#prune rules for support = .1 for manageable size
+rules <- apriori(Adult, parameter = list(support = .1, confidence = 0.6, target ="rules"))
+matrix_sub <- is.subset(rules, rules)
+matrix_sub[lower.tri(matrix_sub, diag=T)] <- NA
+redundantRules <- colSums(matrix_sub, na.rm=T) >= 1
+rules_cut <- rules[!redundantRules]
+```
+
+####(f) Inspect the three item sets with highest lift that indicate the low income and high income respectively. 
+
+```{r 3f, comment=FALSE, warning=FALSE}
+inspect(sort(rulesLowInc, by = "lift")[1:3])
+inspect(sort(rulesHighInc, by = "lift")[1:3])
+```
+
+####(g) Plot your rules with support and confidence.
+
+```{r 3g, comment=FALSE, warning=FALSE}
+library(arulesViz)
+plot(rules)
+```
